@@ -1,0 +1,12 @@
+* api/src, web/android/ios, test, docs, deployment, hosting (local/cloud), pipelines, tools, config
+* flat folder structure
+* docs: markdown static site generated wiki, drawio
+* code editor: vscode
+* testing, unit, app (mock + integration), end to end (mock + integration)
+* versioning - no semantic versioning, just build hashs
+* inheritance/composition - (is a vs. has a)
+* running locally
+* deploy to test cluster, validate/test operations, move forward
+* automatic flighting in prod
+* logging/metrics
+* load testing
