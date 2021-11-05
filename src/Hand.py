@@ -1,5 +1,6 @@
 from ActionOption import ActionOption
 from Deck import Deck
+from Evaluator import Evaluator
 from Round import Round
 
 class Hand:
@@ -10,19 +11,26 @@ class Hand:
         self.Flop = (deck.DealCard(), deck.DealCard(), deck.DealCard())
         self.Turn = deck.DealCard()
         self.River = deck.DealCard()
-        self.PlayerChips = []
 
+        self.PlayerChips = {}
         self.PlayerCards = {}
+        isPlayerRemaining = {}
+        potContributions = {}
         for player in players:
             self.PlayerCards[player] = (deck.DealCard(), deck.DealCard())
-            self.PlayerChips.append(player.Chips)
+            self.PlayerChips[player] = player.Chips
+            isPlayerRemaining[player] = True
+            potContributions[player] = 0
 
-        isPlayerRemaining = [True] * len(players)
         numPlayersRemaining = len(players)
-        potContributions = [0] * len(players)
-        maxPotContribution = 0
-
-        # TODO 1: set the bb sb pot contributions, subtract from chips, and increase max pot contribution
+        
+        smallBlindPostion = (dealerPosition + 1) % len(players)
+        bigBlindPosition = (dealerPosition + 2) % len(players)
+        players[smallBlindPostion].Chips = players[smallBlindPostion].Chips - 50
+        players[bigBlindPosition].Chips = players[bigBlindPosition].Chips - 100
+        potContributions[players[smallBlindPostion]] = 50
+        potContributions[players[bigBlindPosition]] = 100
+        maxPotContribution = 100
 
         for round in Round:
             print(str(round))
@@ -37,33 +45,31 @@ class Hand:
 
             # Get first players action
             lastBetPosition = currentPosition
-            isFirst = True
+            isPreFlopFirst = True and round == Round.PreFlop
 
             # Loop through players until one is left or it gets back to the last person to bet
-            while numPlayersRemaining > 1 and (lastBetPosition != currentPosition or isFirst):
-                isFirst = False
-                if isPlayerRemaining[currentPosition]:
-                    playerAction = players[currentPosition].Action(players, potContributions[currentPosition], maxPotContribution, self)
+            while numPlayersRemaining > 1 and (lastBetPosition != currentPosition or isPreFlopFirst):
+                isPreFlopFirst = False
+                currentPlayer = players[currentPosition]
+                if isPlayerRemaining[currentPlayer]:
+                    playerAction = currentPlayer.Action(players, potContributions[currentPlayer], maxPotContribution, self)
                     self.Actions[round].append(playerAction)
 
                     if playerAction.ActionOption == ActionOption.Bet:
                         lastBetPosition = currentPosition
-                        potContributions[currentPosition] = potContributions[currentPosition] + playerAction.PotContribution
-                        maxPotContribution = max(potContributions)
+                        potContributions[currentPlayer] = potContributions[currentPlayer] + playerAction.PotContribution
+                        maxPotContribution = max(maxPotContribution, potContributions[currentPlayer])
                         
                     elif playerAction.ActionOption == ActionOption.Fold:
                         numPlayersRemaining = numPlayersRemaining - 1
-                        isPlayerRemaining[currentPosition] = False
+                        isPlayerRemaining[currentPlayer] = False
                     
                     elif playerAction.ActionOption == ActionOption.CheckCall:
-                        potContributions[currentPosition] = potContributions[currentPosition] + playerAction.PotContribution
+                        potContributions[currentPlayer] = potContributions[currentPlayer] + playerAction.PotContribution
             
                 currentPosition = (currentPosition + 1) % len(players)
-        
-        remainingPlayers = [position for position, element in enumerate(isPlayerRemaining) if element]
 
-        # TODO 2: compare cards of players
         # TODO 3: distribute money (and side-pots) - winner subtract money equally, next winner subtract money (until 0 left for all)
-        self.WinnerPosition = remainingPlayers[0]
+        self.WinnerPosition = Evaluator.EvaluatePlayers(isPlayerRemaining, self.PlayerCards)
         print("Pot contributions: " + str(potContributions))
         print("Winner Position: " + str(self.WinnerPosition))
