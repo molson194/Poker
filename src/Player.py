@@ -8,31 +8,33 @@ class Player:
         self.Chips = chips
 
     def Action(self, players, currentPotContribution, maxPotContribution, hand):
-        # TODO 5: decide action option based off of characteristics
-        # TODO 7: Pass available options and chips remaining to the AI agent
-        actionOption = random.choice(list(ActionOption))
 
-        potContribution = maxPotContribution - currentPotContribution
+        availableActions = list(ActionOption)
 
-        # TODO 4: Could fold here
-        if potContribution > self.Chips:
-            potContribution = self.Chips
-            self.Chips = 0
-            actionOption = ActionOption.CheckCall
-            return Action(actionOption, potContribution)
+        minBetAmount = maxPotContribution - currentPotContribution
+        if minBetAmount >= self.Chips:
+            availableActions.remove(ActionOption.Bet)
+
+        maxBetAmount = self.Chips - minBetAmount
+
+        # TODO: Implement different actions based on previous hand data, player characteristics, etc.
+        return self.RandomAction(availableActions, minBetAmount, maxBetAmount)
+
+    def __repr__(self):
+        return "Player " + str(self.Position) + " Chip " + str(self.Chips)
+
+    def RandomAction(self, availableActions, minBetAmount, maxBetAmount):
+        actionOption = random.choice(availableActions)
+        potContribution = 0
 
         if actionOption == ActionOption.Bet:
-            # TODO 6: decide bet amount off of characteristics
-            betAmount = random.randint(1, self.Chips - potContribution)
-            potContribution = potContribution + betAmount
-            self.Chips = self.Chips - potContribution
-            print("Player " + str(self.Position) + ": " + str(actionOption) + "=" + str(betAmount) + ", RemainingChips=" + str(self.Chips))
-        
+            betAmount = random.randint(1, maxBetAmount)
+            potContribution = minBetAmount + betAmount
+            self.Chips = self.Chips - potContribution      
         elif actionOption == ActionOption.CheckCall:
-            self.Chips = self.Chips - potContribution
-            print("Player " + str(self.Position) + ": " + str(actionOption) + "=" + str(potContribution) + ", RemainingChips=" + str(self.Chips))
-
-        else:
-            print("Player " + str(self.Position) + ": " + str(actionOption) + ", RemainingChips=" + str(self.Chips))
+            checkCallAmount = min(minBetAmount, self.Chips)
+            self.Chips = self.Chips - checkCallAmount
+            potContribution = checkCallAmount
         
+        print("Player " + str(self.Position) + ": " + str(actionOption) + ", RemainingChips: " + str(self.Chips))
         return Action(actionOption, potContribution)

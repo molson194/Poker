@@ -3,9 +3,10 @@ from enum import Enum
 class Ranking(Enum):
     StraightFlush = 1
     FourOfAKind = 2
-    Flush = 3
-    Straight = 4
-    ThreeOfAKind = 5
-    TwoPair = 6
-    Pair = 7
-    HighCard = 8
+    FullHouse = 3
+    Flush = 4
+    Straight = 5
+    ThreeOfAKind = 6
+    TwoPair = 7
+    Pair = 8
+    HighCard = 9

@@ -1,86 +1,76 @@
+from Deck import Deck
 from Ranking import Ranking
 
-# TODO 1: Evaluate cards
 class Evaluator:
     @staticmethod
-    def EvaluatePlayers(isPlayerRemaining, playerCards):
-        return 0
+    def EvaluatePlayers(playerCards, flop, turn, river):
+        playerResults = []
+        for player in playerCards.keys():
+            playerResults.append( (player, Evaluator.EvaluateCards(list(playerCards[player]) + list(flop) + [turn] + [river]) ) )
+        
+        playerResults.sort(key=lambda x: x[1][0].value * 1000 + x[1][1])
+
+        print(playerCards)
+        print(flop)
+        print(turn)
+        print(river)
+        print(playerResults)
+
+
+        return playerResults
 
     @staticmethod
-    def EvaluateSevenCards(cards):
-        return 0
+    # TODO: Consider kickers (two people that have the same main hand but different remaining cards)
+    def EvaluateCards(cards):
+        valueCounts = {}
+        suitCounts = {}
+        highCardValue = 0
 
-    # Returns the value of 5 cards (or a value less than the best ranking so far)
-    #
-    # Straight Flush: 1-10
-    # Four-of-a-Kind: 1-13
-    # Full House: 1-156
-    # Flush: 1-9
-    # Straight: 1-10
-    # 3-of-a-kind: 1-13
-    # 2-pair: 1-156
-    # 1-pair: 1-13
-    # High card: 1-8
-    @staticmethod
-    def EvaluateFiveCards(cards, bestRankingSoFar):
-        value = Evaluator.StraightFlush(cards)
-        if value != 0 or Ranking.StraightFlush == bestRankingSoFar:
-            return (Ranking.StraightFlush, value)
+        # TODO: Straight flush
 
-        value = Evaluator.FourOfAKind(cards)
-        if value != 0 or Ranking.FourOfAKind == bestRankingSoFar:
-            return (Ranking.FourOfAKind, value)
+        for card in cards:
+            valueCounts[card.Value] = valueCounts.get(card.Value, 0) + 1
+            suitCounts[card.Suit] = suitCounts.get(card.Suit, 0) + 1
+            highCardValue = max(highCardValue, Deck.RankValue(card.Value, None))
 
-        value = Evaluator.Flush(cards)
-        if value != 0 or Ranking.Flush == bestRankingSoFar:
-            return (Ranking.Flush, value)
+        # 4 of a kind    
+        firstMaxValueKey = max(valueCounts, key = valueCounts.get)
+        firstMaxValueCount = valueCounts[firstMaxValueKey]
 
-        value = Evaluator.Straight(cards)
-        if value != 0 or Ranking.Straight == bestRankingSoFar:
-            return (Ranking.Straight, value)
+        if firstMaxValueCount == 4:
+            return (Ranking.FourOfAKind, Deck.RankValue(firstMaxValueKey, None))
 
-        value = Evaluator.ThreeOfAKind(cards)
-        if value != 0 or Ranking.ThreeOfAKind == bestRankingSoFar:
-            return (Ranking.ThreeOfAKind, value)
+        # Full House
+        if firstMaxValueCount == 3:
+            del valueCounts[firstMaxValueKey]
+            secondMaxValueKey = max(valueCounts, key = valueCounts.get)
+            secondMaxValueCount = valueCounts[secondMaxValueKey]
 
-        value = Evaluator.TwoPair(cards)
-        if value != 0 or Ranking.TwoPair == bestRankingSoFar:
-            return (Ranking.TwoPair, value)
+            if secondMaxValueCount == 3 and Deck.RankValue(firstMaxValueKey, None) > Deck.RankValue(secondMaxValueKey, None):
+                return (Ranking.FullHouse, Deck.RankValue(secondMaxValueKey, firstMaxValueKey))
+            elif secondMaxValueCount >= 2:
+                return (Ranking.FullHouse, Deck.RankValue(firstMaxValueKey, secondMaxValueKey))
+        
+        # TODO: Flush
+        # TODO: Straight
 
-        value = Evaluator.Pair(cards)
-        if value != 0 or Ranking.Pair == bestRankingSoFar:
-            return (Ranking.Pair, value)
+        # 3 of a kind
+        if firstMaxValueCount == 3:
+            return (Ranking.ThreeOfAKind, Deck.RankValue(firstMaxValueKey, None))
 
-        return (Ranking.HighCard, Evaluator.HighCard(cards))
-    
-    @staticmethod
-    def StraightFlush(cards):
-        return 0
+        # Two Pair
+        if firstMaxValueCount == 2:
+            del valueCounts[firstMaxValueKey]
+            secondMaxValueKey = max(valueCounts, key = valueCounts.get)
+            secondMaxValueCount = valueCounts[secondMaxValueKey]
 
-    @staticmethod
-    def FourOfAKind(cards):
-        return 0
+            if secondMaxValueCount == 2 and Deck.RankValue(firstMaxValueKey, None) > Deck.RankValue(secondMaxValueKey, None):
+                return (Ranking.TwoPair, Deck.RankValue(secondMaxValueKey, firstMaxValueKey))
+            elif secondMaxValueCount == 2:
+                return (Ranking.TwoPair, Deck.RankValue(firstMaxValueKey, secondMaxValueKey))
 
-    @staticmethod
-    def Flush(cards):
-        return 0
+        # Pair
+        if firstMaxValueCount == 2:
+            return (Ranking.Pair, Deck.RankValue(firstMaxValueKey, None))
 
-    @staticmethod
-    def Straight(cards):
-        return 0
-
-    @staticmethod
-    def ThreeOfAKind(cards):
-        return 0
-
-    @staticmethod
-    def TwoPair(cards):
-        return 0
-
-    @staticmethod
-    def Pair(cards):
-        return 0
-
-    @staticmethod
-    def HighCard(cards):
-        return 0
+        return (Ranking.HighCard, highCardValue)

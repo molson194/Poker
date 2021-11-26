@@ -45,11 +45,11 @@ class Hand:
 
             # Get first players action
             lastBetPosition = currentPosition
-            isPreFlopFirst = True and round == Round.PreFlop
+            isFirstOfRound = True
 
             # Loop through players until one is left or it gets back to the last person to bet
-            while numPlayersRemaining > 1 and (lastBetPosition != currentPosition or isPreFlopFirst):
-                isPreFlopFirst = False
+            while numPlayersRemaining > 1 and (lastBetPosition != currentPosition or isFirstOfRound):
+                isFirstOfRound = False
                 currentPlayer = players[currentPosition]
                 if isPlayerRemaining[currentPlayer]:
                     playerAction = currentPlayer.Action(players, potContributions[currentPlayer], maxPotContribution, self)
@@ -69,7 +69,22 @@ class Hand:
             
                 currentPosition = (currentPosition + 1) % len(players)
 
-        # TODO 3: distribute money (and side-pots) - winner subtract money equally, next winner subtract money (until 0 left for all)
-        self.WinnerPosition = Evaluator.EvaluatePlayers(isPlayerRemaining, self.PlayerCards)
-        print("Pot contributions: " + str(potContributions))
-        print("Winner Position: " + str(self.WinnerPosition))
+        # Distribute money (and side-pots) - winner subtract money equally, next winner subtract money (until 0 left for all)
+        self.PlayerResults = Evaluator.EvaluatePlayers(self.PlayerCards, self.Flop, self.Turn, self.River)
+        self.PlayerContributions = potContributions.copy()
+
+        for playerResult in self.PlayerResults:
+            nextPlayerInLine = playerResult[0]
+            if isPlayerRemaining[nextPlayerInLine]:
+                amountContributed = potContributions[nextPlayerInLine]
+                amountGained = 0
+                
+                for potPlayer in potContributions.keys():
+                    if amountContributed >= potContributions[potPlayer]:
+                        amountGained = amountGained + potContributions[potPlayer]
+                        potContributions[potPlayer] = 0
+                    else:
+                        amountGained = amountGained + amountContributed
+                        potContributions[potPlayer] = potContributions[potPlayer] - amountContributed
+
+                nextPlayerInLine.Chips = nextPlayerInLine.Chips + amountGained
